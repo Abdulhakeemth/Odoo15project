@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.ChatWindow" owl="1">
+    <div class="o-mail-ChatWindow"
+        t-att-style="style"
+        t-att-class="{
+                'w-100 h-100': store.isSmall,
+                'o-folded': props.chatWindow.folded,
+                'position-absolute bottom-0 overflow-hidden d-flex flex-column': !props.chatWindow.hidden,
+                'rounded-top-3': !props.chatWindow.hidden and !store.isSmall,
+                }"
+        t-on-keydown.stop="onKeydown"
+        tabindex="1"
+    >
+        <div class="o-mail-ChatWindow-header d-flex align-items-center flex-shrink-0" t-on-click="toggleFold" t-att-class="{ 'cursor-pointer': !store.isSmall, 'border-bottom': !props.chatWindow.folded }">
+            <div t-if="store.isSmall" class="cursor-pointer d-flex align-items-center h-100 px-3 py-0 me-2" title="Close conversation" t-on-click="() => this.close()">
+                <i class="fa fa-arrow-left"/>
+            </div>
+            <ThreadIcon t-if="thread" thread="thread" className="'ms-3 me-1 my-0'"/>
+            <span class="o-mail-ChatWindow-name text-truncate" t-att-title="props.chatWindow.displayName" t-esc="props.chatWindow.displayName" t-att-class="{
+                    'ms-3 me-1 my-0': !thread,
+                }"
+            />
+            <div t-if="thread and thread.isChannel and thread.message_unread_counter > 0" class="mx-1 my-0">
+                (<t t-out="thread.message_unread_counter"/>)
+            </div>
+            <div class="flex-grow-1"/>
+            <div t-if="thread?.model === 'discuss.channel' and env.isSmall" class="o-mail-ChatWindow-command d-flex align-items-center h-100 px-3 py-0 m-0 opacity-50 opacity-100-hover" title="Pinned messages" t-on-click.stop="togglePinMenu">
+                <i class="fa fa-lg fa-thumb-tack"/>
+            </div>
+            <div t-if="thread and thread.allowCalls and thread !== rtc.state.channel and !props.chatWindow.hidden" class="o-mail-ChatWindow-command d-flex align-items-center h-100 px-3 py-0 m-0 opacity-50 opacity-100-hover" title="Start a Call" t-on-click.stop="() => this.rtc.toggleCall(this.props.chatWindow.thread)" t-ref="startCall">
+                <i class="fa fa-phone"/>
+            </div>
+            <t t-if="thread">
+                <div t-if="!env.isSmall" class="o-mail-ChatWindow-command d-flex align-items-center h-100 px-3 py-0 m-0 opacity-50 opacity-100-hover" title="Open in Discuss" t-on-click.stop="expand" t-ref="expand">
+                    <i class="fa fa-expand"/>
+                </div>
+            </t>
+            <div class="o-mail-ChatWindow-command d-flex align-items-center h-100 px-3 opacity-50 opacity-100-hover" title="Close chat window" t-on-click.stop="() => this.close()">
+                <i class="fa fa-close"></i>
+            </div>
+        </div>
+        <div t-if="!props.chatWindow.folded" class="o-mail-ChatWindow-content bg-view d-flex flex-column h-100 overflow-auto border-start border-end" t-ref="content">
+            <t t-if="thread">
+                <PinnedMessagesPanel t-if="state.activeMode === 'pinned-messages'" thread="thread"/>
+                <t t-else="">
+                    <Call t-if="Object.keys(thread.rtcSessions).length > 0" thread="thread" compact="true"/>
+                    <Thread isInChatWindow="true" thread="thread" t-key="thread.localId" messageEdition="messageEdition" messageToReplyTo="messageToReplyTo"/>
+                    <Composer composer="thread.composer" autofocus="props.chatWindow.autofocus" mode="'compact'" messageEdition="messageEdition" messageToReplyTo="messageToReplyTo" dropzoneRef="contentRef"/>
+                </t>
+            </t>
+            <div t-else="" class="d-flex align-items-center m-3">
+                <span class="flex-shrink-0 me-2">To :</span>
+                <ChannelSelector category="store.discuss.chats" onValidate="() => chatWindowService.closeNewMessage()" multiple="false" autofocus="true"/>
+            </div>
+        </div>
+    </div>
+</t>
+
+</templates>
